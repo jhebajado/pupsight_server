@@ -161,7 +161,7 @@ pub async fn get_field_filedata(field: &mut Field) -> Result<Vec<u8>, Error> {
 pub enum Classification {
     Normal,
     Incipient,
-    Muture,
+    Mature,
     Hypermature,
 }
 
@@ -180,7 +180,7 @@ impl From<usize> for Classification {
         match value {
             0 => Self::Hypermature,
             1 => Self::Incipient,
-            2 => Self::Muture,
+            2 => Self::Mature,
             3 => Self::Normal,
             _ => panic!("Invalid numerical value for classification"),
         }
