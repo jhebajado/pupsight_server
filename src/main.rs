@@ -1,4 +1,5 @@
 mod config;
+mod database;
 mod detector;
 mod password_hasher;
 
@@ -12,6 +13,7 @@ use config::ServerConfig;
 use futures::{StreamExt, TryStreamExt};
 use image::{imageops::FilterType, GenericImageView};
 
+use database::Database;
 use detector::Detector;
 use password_hasher::PasswordHasher;
 
@@ -28,6 +30,7 @@ fn main() -> std::io::Result<()> {
 async fn start(config: ServerConfig) -> std::io::Result<()> {
     let server_url = config.socket_addr();
 
+    let database = web::Data::new(Database::new(&config.database_url).await);
     let detector = web::Data::new(Detector::new());
     let hasher = web::Data::new(PasswordHasher::new(config.salt));
 
@@ -35,6 +38,7 @@ async fn start(config: ServerConfig) -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .app_data(database.clone())
             .app_data(detector.clone())
             .app_data(hasher.clone())
             .service(process_image)
