@@ -1,37 +1,47 @@
+mod config;
 mod detector;
+mod password_hasher;
 
 use actix_multipart::{Field, Multipart};
 use actix_web::{
-    web::{self, Data},
+    web::{self},
     App, Error, HttpResponse, HttpServer,
 };
-use dotenvy::dotenv;
+
+use config::ServerConfig;
 use futures::{StreamExt, TryStreamExt};
 use image::{imageops::FilterType, GenericImageView};
 
 use detector::Detector;
+use password_hasher::PasswordHasher;
 
 fn main() -> std::io::Result<()> {
-    dotenv().ok();
-
-    let detector = Data::new(detector::Detector::new());
+    let config = ServerConfig::load();
 
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(start(detector))
+        .block_on(start(config))
 }
 
-async fn start(session: Data<Detector>) -> std::io::Result<()> {
-    let server_url = std::env::var("SERVER_URL").expect("SERVER_URL must be set");
+async fn start(config: ServerConfig) -> std::io::Result<()> {
+    let server_url = config.socket_addr();
+
+    let detector = web::Data::new(Detector::new());
+    let hasher = web::Data::new(PasswordHasher::new(config.salt));
 
     println!("SERVER_URL: {server_url}");
 
-    HttpServer::new(move || App::new().app_data(session.clone()).service(process_image))
-        .bind(server_url)?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(detector.clone())
+            .app_data(hasher.clone())
+            .service(process_image)
+    })
+    .bind(server_url)?
+    .run()
+    .await
 }
 
 #[actix_web::post("/scan")]
