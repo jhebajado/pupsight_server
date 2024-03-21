@@ -1,7 +1,10 @@
 mod config;
 mod database;
 mod detector;
+mod messages;
 mod password_hasher;
+mod routes;
+mod schema;
 
 use actix_multipart::{Field, Multipart};
 use actix_web::{
@@ -41,6 +44,7 @@ async fn start(config: ServerConfig) -> std::io::Result<()> {
             .app_data(database.clone())
             .app_data(detector.clone())
             .app_data(hasher.clone())
+            .service(routes::users::scope())
             .service(process_image)
     })
     .bind(server_url)?
