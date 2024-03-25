@@ -158,4 +158,24 @@ impl Database {
             Err(_) => SampleUploadResult::Failed,
         }
     }
+
+    #[inline]
+    pub(crate) async fn get_sample_image(
+        &self,
+        sample_id: uuid::Uuid,
+    ) -> messages::samples::SampleImageResult {
+        use crate::schema::samples;
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        match samples::table
+            .filter(samples::id.eq(sample_id))
+            .select(samples::bytes)
+            .first::<Vec<u8>>(&mut connection)
+        {
+            Ok(bytes) => messages::samples::SampleImageResult::Success { bytes },
+            Err(diesel::result::Error::NotFound) => messages::samples::SampleImageResult::NotFound,
+            Err(_) => messages::samples::SampleImageResult::ServerError,
+        }
+    }
 }
