@@ -55,6 +55,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    session (id) {
+        id -> Uuid,
+        access_token -> Bytea,
+        user_id -> Uuid,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     users (id) {
         id -> Uuid,
         #[max_length = 24]
@@ -73,10 +82,12 @@ diesel::joinable!(pets -> users (owner_id));
 diesel::joinable!(results -> samples (sample_id));
 diesel::joinable!(samples -> pets (pet_id));
 diesel::joinable!(samples -> users (owner_id));
+diesel::joinable!(session -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     pets,
     results,
     samples,
+    session,
     users,
 );

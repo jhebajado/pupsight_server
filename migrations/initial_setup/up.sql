@@ -1,5 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
+CREATE extension IF NOT EXISTS "pgcrypto";
 
 -- Create tables
 
@@ -15,6 +15,19 @@ CREATE TABLE users (
 
     UNIQUE(login_name),
     PRIMARY KEY (id)
+);
+
+CREATE TABLE Session (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    access_token BYTEA NOT NULL DEFAULT gen_random_bytes(32),
+    user_id UUID NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+        FOREIGN KEY(user_id)
+            REFERENCES users(id)
 );
 
 CREATE TABLE pets (
