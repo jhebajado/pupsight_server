@@ -1,7 +1,7 @@
 use serde_json::json;
 use uuid::Uuid;
 
-use actix_web::HttpResponse;
+use actix_web::{cookie::Cookie, HttpResponse};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -28,6 +28,34 @@ impl From<RegisterUserResult> for HttpResponse {
             RegisterUserResult::Success { id } => HttpResponse::Ok().json(json!({
                 "id": id
             })),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub(crate) struct LoginUser {
+    pub(crate) login_name: String,
+    pub(crate) password: String,
+}
+
+pub(crate) enum LoginUserResult {
+    Success {
+        id: uuid::Uuid,
+        access_token: String,
+    },
+    Invalid,
+    ServerError,
+}
+
+impl From<LoginUserResult> for HttpResponse {
+    fn from(val: LoginUserResult) -> Self {
+        match val {
+            LoginUserResult::Success { id, access_token } => HttpResponse::Ok()
+                .cookie(Cookie::new("session", id.to_string()))
+                .cookie(Cookie::new("access_token", access_token))
+                .finish(),
+            LoginUserResult::ServerError => HttpResponse::InternalServerError().finish(),
+            LoginUserResult::Invalid => HttpResponse::Unauthorized().finish(),
         }
     }
 }

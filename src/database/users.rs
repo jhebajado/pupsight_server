@@ -3,7 +3,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::HttpRequest;
 
-use base64::prelude::*;
+use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::Insertable;
 
 use crate::schema::users;
