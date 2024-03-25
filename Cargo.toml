@@ -25,3 +25,4 @@ diesel = { version = "2.1.6", features = [
     "uuid",
     "chrono",
 ] }
+base64 = "0.22.0"
