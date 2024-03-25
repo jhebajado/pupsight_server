@@ -5,6 +5,7 @@ use std::sync::Arc;
 use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+pub(crate) use users::UserSession;
 
 use crate::messages::users::LoginUserResult;
 use crate::password_hasher::PasswordHasher;

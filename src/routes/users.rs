@@ -1,4 +1,4 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
 
 use crate::{
     database::Database,
@@ -34,8 +34,14 @@ async fn post_login(
         .into()
 }
 
+#[get("/info")]
+async fn get_info(info: crate::database::UserSession) -> HttpResponse {
+    HttpResponse::Ok().json(info)
+}
+
 pub(crate) fn scope() -> actix_web::Scope {
     web::scope("/users")
         .service(post_register)
         .service(post_login)
+        .service(get_info)
 }
