@@ -32,17 +32,6 @@ impl<'a> PasswordHasher<'a> {
 
         PasswordHash(output)
     }
-
-    #[inline]
-    pub(crate) fn is_match(&self, hash: PasswordHash, password: &str) -> bool {
-        let mut output = [0u8; 32];
-
-        self.argon2
-            .hash_password_into(password.as_bytes(), &self.salt, &mut output)
-            .unwrap();
-
-        output == hash.0
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, AsExpression)]
