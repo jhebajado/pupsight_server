@@ -1,3 +1,4 @@
+mod samples;
 mod users;
 
 use std::sync::Arc;
@@ -5,10 +6,13 @@ use std::sync::Arc;
 use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
-pub(crate) use users::UserSession;
 
+use crate::messages::samples::SampleUploadResult;
 use crate::messages::users::LoginUserResult;
 use crate::password_hasher::PasswordHasher;
+pub(crate) use samples::SampleInsert;
+pub(crate) use users::UserSession;
+
 use crate::{messages, schema};
 
 pub(crate) struct Database {
@@ -135,5 +139,23 @@ impl Database {
             first_name,
             last_name,
         })
+    }
+
+    #[inline]
+    pub(crate) async fn upload_samples(
+        &self,
+        samples: Vec<samples::SampleInsert>,
+    ) -> SampleUploadResult {
+        use crate::schema::samples;
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        match diesel::insert_into(samples::table)
+            .values(samples)
+            .execute(&mut connection)
+        {
+            Ok(_) => SampleUploadResult::Success,
+            Err(_) => SampleUploadResult::Failed,
+        }
     }
 }

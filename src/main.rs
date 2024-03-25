@@ -45,6 +45,7 @@ async fn start(config: ServerConfig) -> std::io::Result<()> {
             .app_data(detector.clone())
             .app_data(hasher.clone())
             .service(routes::users::scope())
+            .service(routes::samples::scope())
             .service(process_image)
     })
     .bind(server_url)?
