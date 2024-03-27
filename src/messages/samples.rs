@@ -1,5 +1,43 @@
 use actix_web::HttpResponse;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+pub(crate) struct SamplePendingList {
+    pub(crate) page: u32,
+    pub(crate) keyword: Option<String>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct PendingListEntry {
+    pub(crate) id: uuid::Uuid,
+    pub(crate) label: String,
+    pub(crate) pet_id: Option<uuid::Uuid>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct PendingListData {
+    items: Vec<PendingListEntry>,
+    has_next: bool,
+}
+
+pub(crate) enum PendingListResult {
+    Success {
+        items: Vec<PendingListEntry>,
+        has_next: bool,
+    },
+    Failed,
+}
+
+impl From<PendingListResult> for HttpResponse {
+    fn from(val: PendingListResult) -> Self {
+        match val {
+            PendingListResult::Success { items, has_next } => {
+                HttpResponse::Ok().json(PendingListData { items, has_next })
+            }
+            PendingListResult::Failed => HttpResponse::UnprocessableEntity().finish(),
+        }
+    }
+}
 
 pub(crate) enum SampleUploadResult {
     Success,

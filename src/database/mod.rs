@@ -5,7 +5,10 @@ use std::sync::Arc;
 
 use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::r2d2::{ConnectionManager, Pool};
-use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
+use diesel::{
+    BoolExpressionMethods, ExpressionMethods, PgConnection, PgTextExpressionMethods, QueryDsl,
+    RunQueryDsl,
+};
 
 use crate::messages::samples::SampleUploadResult;
 use crate::messages::users::LoginUserResult;
@@ -176,6 +179,52 @@ impl Database {
             Ok(bytes) => messages::samples::SampleImageResult::Success { bytes },
             Err(diesel::result::Error::NotFound) => messages::samples::SampleImageResult::NotFound,
             Err(_) => messages::samples::SampleImageResult::ServerError,
+        }
+    }
+
+    #[inline]
+    pub(crate) async fn get_sample_list(
+        &self,
+        user_id: uuid::Uuid,
+        desc: messages::samples::SamplePendingList,
+    ) -> messages::samples::PendingListResult {
+        use crate::schema::samples;
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        match samples::table
+            .filter(
+                samples::owner_id
+                    .eq(user_id)
+                    .and(samples::pet_id.is_null())
+                    .and(samples::label.ilike(if let Some(search) = desc.keyword {
+                        format!("%{}%", search)
+                    } else {
+                        "%".to_string()
+                    })),
+            )
+            .select((samples::id, samples::label, samples::pet_id))
+            .limit(10)
+            .offset(desc.page as i64)
+            .order(samples::created_at.desc())
+            .get_results::<self::samples::SampleEntry>(&mut connection)
+        {
+            Ok(items) => {
+                let items: Vec<self::samples::SampleEntry> = items;
+
+                messages::samples::PendingListResult::Success {
+                    items: items
+                        .iter()
+                        .map(|entry| self::messages::samples::PendingListEntry {
+                            id: entry.id,
+                            label: entry.label.clone(),
+                            pet_id: entry.pet_id,
+                        })
+                        .collect(),
+                    has_next: items.len() == 10,
+                }
+            }
+            _ => messages::samples::PendingListResult::Failed,
         }
     }
 }

@@ -2,8 +2,8 @@ use actix_multipart::{Field, Multipart};
 use actix_web::{get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
 
-use crate::database::SampleInsert;
-use crate::messages::samples::SampleImage;
+use crate::database::{SampleInsert, UserSession};
+use crate::messages::samples::{SampleImage, SamplePendingList};
 
 #[post("/upload")]
 async fn post_upload(
@@ -46,7 +46,7 @@ async fn get_field_filedata(field: &mut Field) -> Result<Vec<u8>, Error> {
 }
 
 #[get("/image")]
-async fn get_upload(
+async fn get_image(
     (database, desc): (
         web::Data<crate::database::Database>,
         web::Query<SampleImage>,
@@ -55,8 +55,23 @@ async fn get_upload(
     database.get_sample_image(desc.sample_id).await.into()
 }
 
+#[get("/pendings")]
+async fn get_upload(
+    (database, user, desc): (
+        web::Data<crate::database::Database>,
+        UserSession,
+        web::Query<SamplePendingList>,
+    ),
+) -> HttpResponse {
+    database
+        .get_sample_list(user.user_id, desc.into_inner())
+        .await
+        .into()
+}
+
 pub(crate) fn scope() -> actix_web::Scope {
     web::scope("/samples")
         .service(post_upload)
+        .service(get_image)
         .service(get_upload)
 }
