@@ -90,7 +90,7 @@ async fn post_infer(
         web::Data<crate::Database>,
         web::Data<crate::Detector>,
         UserSession,
-        web::Query<SampleImage>,
+        web::Json<SampleImage>,
     ),
 ) -> HttpResponse {
     database
@@ -104,7 +104,7 @@ async fn delete_samples(
     (database, _user, desc): (
         web::Data<crate::Database>,
         UserSession,
-        web::Query<SampleImage>,
+        web::Json<SampleImage>,
     ),
 ) -> HttpResponse {
     database.delete_sample_image(desc.sample_id).await.into()
