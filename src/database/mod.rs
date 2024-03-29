@@ -187,6 +187,7 @@ impl Database {
     #[inline]
     pub(crate) async fn infer_sample_image(
         &self,
+        owner_id: uuid::Uuid,
         sample_id: uuid::Uuid,
         detector: &crate::Detector,
     ) -> messages::samples::SampleInferResult {
@@ -195,7 +196,11 @@ impl Database {
         let mut connection = self.pool.get().expect("Unable to connect to database");
 
         let img = match samples::table
-            .filter(samples::id.eq(sample_id))
+            .filter(
+                samples::id
+                    .eq(sample_id)
+                    .and(samples::owner_id.eq(owner_id)),
+            )
             .select(samples::bytes)
             .first::<Vec<u8>>(&mut connection)
         {

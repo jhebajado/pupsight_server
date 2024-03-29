@@ -79,7 +79,7 @@ async fn post_infer(
     ),
 ) -> HttpResponse {
     database
-        .infer_sample_image(desc.sample_id, detector.as_ref())
+        .infer_sample_image(user.user_id, desc.sample_id, detector.as_ref())
         .await
         .into()
 }
