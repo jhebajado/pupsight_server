@@ -51,8 +51,16 @@ impl From<LoginUserResult> for HttpResponse {
     fn from(val: LoginUserResult) -> Self {
         match val {
             LoginUserResult::Success { id, access_token } => HttpResponse::Ok()
-                .cookie(Cookie::new("session", id.to_string()))
-                .cookie(Cookie::new("access_token", access_token))
+                .cookie({
+                    let mut ck = Cookie::new("session", id.to_string());
+                    ck.set_path("/");
+                    ck
+                })
+                .cookie({
+                    let mut ck = Cookie::new("access_token", access_token);
+                    ck.set_path("/");
+                    ck
+                })
                 .finish(),
             LoginUserResult::ServerError => HttpResponse::InternalServerError().finish(),
             LoginUserResult::Invalid => HttpResponse::Unauthorized().finish(),

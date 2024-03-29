@@ -7,6 +7,7 @@ pub(crate) struct SampleInsert {
     pub(crate) label: String,
     pub(crate) bytes: Vec<u8>,
     pub(crate) owner_id: uuid::Uuid,
+    pub(crate) deleted: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Selectable, Queryable)]

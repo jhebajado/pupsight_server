@@ -1,8 +1,7 @@
 use actix_multipart::{Field, Multipart};
-use actix_web::delete;
 use actix_web::{get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
-use image::{imageops, GenericImageView};
+use image::GenericImageView;
 
 use crate::database::{SampleInsert, UserSession};
 use crate::messages::samples::{SampleImage, SampleInferredList, SamplePendingList};
@@ -31,7 +30,6 @@ async fn post_upload(
         let cropped_image = raw.crop(x, y, size, size);
 
         if cropped_image
-            .resize_exact(640, 640, imageops::FilterType::Gaussian)
             .write_to(&mut buffer, image::ImageFormat::WebP)
             .is_err()
         {
@@ -42,6 +40,7 @@ async fn post_upload(
             label: field.name().to_string(),
             bytes: file_data,
             owner_id: info.user_id,
+            deleted: false,
         });
     }
 
