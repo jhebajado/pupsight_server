@@ -166,7 +166,6 @@ impl Database {
     #[inline]
     pub(crate) async fn get_sample_image(
         &self,
-        owner_id: uuid::Uuid,
         sample_id: uuid::Uuid,
     ) -> messages::samples::SampleImageResult {
         use crate::schema::samples;
@@ -174,11 +173,7 @@ impl Database {
         let mut connection = self.pool.get().expect("Unable to connect to database");
 
         match samples::table
-            .filter(
-                samples::id
-                    .eq(sample_id)
-                    .and(samples::owner_id.eq(owner_id)),
-            )
+            .filter(samples::id.eq(sample_id))
             .select(samples::bytes)
             .first::<Vec<u8>>(&mut connection)
         {

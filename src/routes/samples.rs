@@ -48,16 +48,12 @@ async fn get_field_filedata(field: &mut Field) -> Result<Vec<u8>, Error> {
 
 #[get("/image")]
 async fn get_image(
-    (database, user, desc): (
+    (database, desc): (
         web::Data<crate::database::Database>,
-        UserSession,
         web::Query<SampleImage>,
     ),
 ) -> HttpResponse {
-    database
-        .get_sample_image(user.user_id, desc.sample_id)
-        .await
-        .into()
+    database.get_sample_image(desc.sample_id).await.into()
 }
 
 #[get("/pendings")]
@@ -103,7 +99,7 @@ async fn post_infer(
         .into()
 }
 
-#[delete("/delete")]
+#[post("/delete")]
 async fn delete_samples(
     (database, _user, desc): (
         web::Data<crate::Database>,
