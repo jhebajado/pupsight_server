@@ -121,7 +121,7 @@ impl Detector {
     }
 }
 
-#[derive(Clone, Copy, Debug, serde::Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize)]
 pub enum Classification {
     Normal,
     Incipient,
@@ -139,12 +139,12 @@ impl From<usize> for Classification {
 
 #[derive(Clone, Copy, Debug, serde::Serialize)]
 pub struct ResultBox {
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-    probability: f32,
-    classification: Classification,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub probability: f32,
+    pub classification: Classification,
 }
 
 #[derive(Clone, Copy)]

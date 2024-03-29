@@ -9,7 +9,9 @@ use diesel::{
     BoolExpressionMethods, ExpressionMethods, PgConnection, PgTextExpressionMethods, QueryDsl,
     RunQueryDsl,
 };
+use image::DynamicImage;
 
+use crate::detector::Classification;
 use crate::messages::samples::SampleUploadResult;
 use crate::messages::users::LoginUserResult;
 use crate::password_hasher::PasswordHasher;
@@ -179,6 +181,60 @@ impl Database {
             Ok(bytes) => messages::samples::SampleImageResult::Success { bytes },
             Err(diesel::result::Error::NotFound) => messages::samples::SampleImageResult::NotFound,
             Err(_) => messages::samples::SampleImageResult::ServerError,
+        }
+    }
+
+    #[inline]
+    pub(crate) async fn infer_sample_image(
+        &self,
+        sample_id: uuid::Uuid,
+        detector: &crate::Detector,
+    ) -> messages::samples::SampleInferResult {
+        use crate::schema::{results, samples};
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        let img = match samples::table
+            .filter(samples::id.eq(sample_id))
+            .select(samples::bytes)
+            .first::<Vec<u8>>(&mut connection)
+        {
+            Ok(bytes) => {
+                if let Ok(img) =
+                    image::load_from_memory_with_format(&bytes, image::ImageFormat::WebP)
+                {
+                    img
+                } else {
+                    return messages::samples::SampleInferResult::ImageLoadError;
+                }
+            }
+            Err(diesel::result::Error::NotFound) => {
+                return messages::samples::SampleInferResult::NotFound
+            }
+            Err(_) => return messages::samples::SampleInferResult::ServerError,
+        };
+
+        let boxes = detector.infer(&img).await;
+
+        let result: Vec<self::samples::ResultInsert> = boxes
+            .into_iter()
+            .map(|entry| self::samples::ResultInsert {
+                sample_id,
+                certainty: entry.probability,
+                is_normal: entry.classification == crate::detector::Classification::Normal,
+                x: entry.x,
+                y: entry.y,
+                width: entry.width,
+                height: entry.height,
+            })
+            .collect();
+
+        match diesel::insert_into(results::table)
+            .values(result)
+            .execute(&mut connection)
+        {
+            Ok(_) => messages::samples::SampleInferResult::Success,
+            Err(_) => messages::samples::SampleInferResult::ServerError,
         }
     }
 

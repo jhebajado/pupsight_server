@@ -75,3 +75,21 @@ impl From<SampleImageResult> for HttpResponse {
         }
     }
 }
+
+pub(crate) enum SampleInferResult {
+    Success,
+    NotFound,
+    ImageLoadError,
+    ServerError,
+}
+
+impl From<SampleInferResult> for HttpResponse {
+    fn from(val: SampleInferResult) -> Self {
+        match val {
+            SampleInferResult::Success => HttpResponse::Accepted().finish(),
+            SampleInferResult::NotFound => HttpResponse::NotFound().finish(),
+            SampleInferResult::ImageLoadError => HttpResponse::UnprocessableEntity().finish(),
+            SampleInferResult::ServerError => HttpResponse::InternalServerError().finish(),
+        }
+    }
+}

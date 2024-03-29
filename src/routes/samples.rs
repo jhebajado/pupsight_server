@@ -69,6 +69,21 @@ async fn get_upload(
         .into()
 }
 
+#[post("/infer")]
+async fn post_infer(
+    (database, detector, user, desc): (
+        web::Data<crate::Database>,
+        web::Data<crate::Detector>,
+        UserSession,
+        web::Query<SampleImage>,
+    ),
+) -> HttpResponse {
+    database
+        .infer_sample_image(desc.sample_id, detector.as_ref())
+        .await
+        .into()
+}
+
 pub(crate) fn scope() -> actix_web::Scope {
     web::scope("/samples")
         .service(post_upload)
