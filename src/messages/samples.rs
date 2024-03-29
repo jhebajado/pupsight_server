@@ -12,7 +12,6 @@ pub(crate) struct SamplePendingList {
 pub(crate) struct SampleInferredList {
     pub(crate) page: u32,
     pub(crate) keyword: Option<String>,
-    pub(crate) is_normal: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -25,6 +24,12 @@ pub(crate) struct PendingListEntry {
 #[derive(Serialize)]
 pub(crate) struct PendingListData {
     items: Vec<PendingListEntry>,
+    has_next: bool,
+}
+
+#[derive(Serialize)]
+pub(crate) struct InferredListData {
+    items: Vec<InferredListEntry>,
     has_next: bool,
 }
 
@@ -42,7 +47,7 @@ impl From<PendingListResult> for HttpResponse {
             PendingListResult::Success { items, has_next } => {
                 HttpResponse::Ok().json(PendingListData { items, has_next })
             }
-            PendingListResult::Failed => HttpResponse::UnprocessableEntity().finish(),
+            PendingListResult::Failed => HttpResponse::ServiceUnavailable().finish(),
         }
     }
 }
@@ -81,6 +86,17 @@ pub(crate) enum InferredListResult {
         has_next: bool,
     },
     Failed,
+}
+
+impl From<InferredListResult> for HttpResponse {
+    fn from(val: InferredListResult) -> Self {
+        match val {
+            InferredListResult::Success { items, has_next } => {
+                HttpResponse::Ok().json(InferredListData { items, has_next })
+            }
+            InferredListResult::Failed => HttpResponse::ServiceUnavailable().finish(),
+        }
+    }
 }
 
 pub(crate) enum SampleUploadResult {

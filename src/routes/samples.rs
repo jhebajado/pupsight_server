@@ -1,9 +1,10 @@
 use actix_multipart::{Field, Multipart};
+use actix_web::delete;
 use actix_web::{get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
 
 use crate::database::{SampleInsert, UserSession};
-use crate::messages::samples::{SampleImage, SamplePendingList};
+use crate::messages::samples::{SampleImage, SampleInferredList, SamplePendingList};
 
 #[post("/upload")]
 async fn post_upload(
@@ -60,7 +61,7 @@ async fn get_image(
 }
 
 #[get("/pendings")]
-async fn get_upload(
+async fn get_pendings(
     (database, user, desc): (
         web::Data<crate::database::Database>,
         UserSession,
@@ -69,6 +70,20 @@ async fn get_upload(
 ) -> HttpResponse {
     database
         .get_sample_list(user.user_id, desc.into_inner())
+        .await
+        .into()
+}
+
+#[get("/infers")]
+async fn get_infers(
+    (database, user, desc): (
+        web::Data<crate::database::Database>,
+        UserSession,
+        web::Query<SampleInferredList>,
+    ),
+) -> HttpResponse {
+    database
+        .get_inferred_list(user.user_id, desc.into_inner())
         .await
         .into()
 }
@@ -88,10 +103,23 @@ async fn post_infer(
         .into()
 }
 
+#[delete("/delete")]
+async fn delete_samples(
+    (database, _user, desc): (
+        web::Data<crate::Database>,
+        UserSession,
+        web::Query<SampleImage>,
+    ),
+) -> HttpResponse {
+    database.delete_sample_image(desc.sample_id).await.into()
+}
+
 pub(crate) fn scope() -> actix_web::Scope {
     web::scope("/samples")
         .service(post_upload)
         .service(get_image)
-        .service(get_upload)
+        .service(get_pendings)
+        .service(get_infers)
         .service(post_infer)
+        .service(delete_samples)
 }

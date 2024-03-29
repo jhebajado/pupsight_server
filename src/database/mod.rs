@@ -7,8 +7,8 @@ use std::sync::Arc;
 use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{
-    BoolExpressionMethods, ExpressionMethods, JoinOnDsl, PgConnection, PgTextExpressionMethods,
-    QueryDsl, RunQueryDsl, SelectableHelper,
+    BoolExpressionMethods, ExpressionMethods, PgConnection, PgTextExpressionMethods, QueryDsl,
+    RunQueryDsl, SelectableHelper,
 };
 
 use crate::messages::samples::SampleUploadResult;
@@ -189,6 +189,26 @@ impl Database {
     }
 
     #[inline]
+    pub(crate) async fn delete_sample_image(
+        &self,
+
+        sample_id: uuid::Uuid,
+    ) -> messages::samples::SampleInferResult {
+        use crate::schema::samples;
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        match diesel::update(samples::table.filter(samples::id.eq(sample_id)))
+            .set(samples::deleted.eq(true))
+            .execute(&mut connection)
+        {
+            Ok(_) => messages::samples::SampleInferResult::Success,
+            Err(diesel::result::Error::NotFound) => messages::samples::SampleInferResult::NotFound,
+            Err(_) => messages::samples::SampleInferResult::ServerError,
+        }
+    }
+
+    #[inline]
     pub(crate) async fn infer_sample_image(
         &self,
         owner_id: uuid::Uuid,
@@ -201,9 +221,11 @@ impl Database {
 
         let img = match samples::table
             .filter(
-                samples::id
-                    .eq(sample_id)
-                    .and(samples::owner_id.eq(owner_id)),
+                samples::deleted.eq(false).and(
+                    samples::id
+                        .eq(sample_id)
+                        .and(samples::owner_id.eq(owner_id)),
+                ),
             )
             .select(samples::bytes)
             .first::<Vec<u8>>(&mut connection)
@@ -263,13 +285,17 @@ impl Database {
 
         match samples::table
             .left_outer_join(results::table)
-            .filter(samples::owner_id.eq(user_id).and(samples::label.ilike(
-                if let Some(search) = desc.keyword {
-                    format!("%{}%", search)
-                } else {
-                    "%".to_string()
-                },
-            )))
+            .filter(
+                samples::deleted
+                    .eq(false)
+                    .and(samples::owner_id.eq(user_id).and(samples::label.ilike(
+                        if let Some(search) = desc.keyword {
+                            format!("%{}%", search)
+                        } else {
+                            "%".to_string()
+                        },
+                    ))),
+            )
             .select((samples::id, samples::label, samples::pet_id))
             .limit(10)
             .offset(desc.page as i64)
@@ -321,6 +347,9 @@ impl Database {
                 self::samples::Result::as_select(),
                 self::samples::Sample::as_select(),
             ))
+            .limit(10)
+            .offset(desc.page as i64)
+            .order(samples::created_at.desc())
             .get_results::<(self::samples::Result, self::samples::Sample)>(&mut connection)
         {
             Ok(r) => {

@@ -41,6 +41,7 @@ diesel::table! {
         bytes -> Bytea,
         owner_id -> Uuid,
         pet_id -> Nullable<Uuid>,
+        deleted -> Nullable<Bool>,
         created_at -> Timestamp,
         updated_at -> Nullable<Timestamp>,
     }

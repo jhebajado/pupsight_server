@@ -53,6 +53,7 @@ CREATE TABLE samples (
     bytes BYTEA NOT NULL,
     owner_id UUID NOT NULL,
     pet_id UUID DEFAULT NULL,
+    deleted BOOL DEFAULT false,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT NULL,
