@@ -2,7 +2,7 @@ use actix_multipart::{Field, Multipart};
 use actix_web::delete;
 use actix_web::{get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
-use image::imageops;
+use image::{imageops, GenericImageView};
 
 use crate::database::{SampleInsert, UserSession};
 use crate::messages::samples::{SampleImage, SampleInferredList, SamplePendingList};
@@ -18,10 +18,19 @@ async fn post_upload(
     let mut samples = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let file_data = get_field_filedata(&mut field).await.unwrap();
-        let raw = image::load_from_memory(&file_data).unwrap();
+        let mut raw = image::load_from_memory(&file_data).unwrap();
         let mut buffer = std::io::Cursor::new(Vec::<u8>::new());
 
-        if raw
+        let (width, height) = raw.dimensions();
+
+        let size = if width < height { width } else { height };
+
+        let x = (width - size) / 2;
+        let y = (height - size) / 2;
+
+        let cropped_image = raw.crop(x, y, size, size);
+
+        if cropped_image
             .resize_exact(640, 640, imageops::FilterType::Gaussian)
             .write_to(&mut buffer, image::ImageFormat::WebP)
             .is_err()
