@@ -81,7 +81,7 @@ CREATE TABLE results (
     iris_y REAL DEFAULT NULL,
     iris_a REAL DEFAULT NULL,
     iris_b REAL DEFAULT NULL,
-    precentage REAL DEFAULT NULL,
+    coverage REAL DEFAULT NULL,
 
 
     sample_id UUID NOT NULL,

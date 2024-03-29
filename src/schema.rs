@@ -26,7 +26,7 @@ diesel::table! {
         iris_y -> Nullable<Float4>,
         iris_a -> Nullable<Float4>,
         iris_b -> Nullable<Float4>,
-        precentage -> Nullable<Float4>,
+        coverage -> Nullable<Float4>,
         sample_id -> Uuid,
         created_at -> Timestamp,
         updated_at -> Nullable<Timestamp>,
