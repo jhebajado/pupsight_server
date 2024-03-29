@@ -173,7 +173,7 @@ impl Database {
         let mut connection = self.pool.get().expect("Unable to connect to database");
 
         match samples::table
-            .filter(samples::id.eq(sample_id))
+            .filter(samples::id.eq(sample_id).and(samples::deleted.eq(false)))
             .select(samples::bytes)
             .first::<Vec<u8>>(&mut connection)
         {
