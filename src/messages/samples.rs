@@ -1,10 +1,18 @@
 use actix_web::HttpResponse;
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub(crate) struct SamplePendingList {
     pub(crate) page: u32,
     pub(crate) keyword: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SampleInferredList {
+    pub(crate) page: u32,
+    pub(crate) keyword: Option<String>,
+    pub(crate) is_normal: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -37,6 +45,42 @@ impl From<PendingListResult> for HttpResponse {
             PendingListResult::Failed => HttpResponse::UnprocessableEntity().finish(),
         }
     }
+}
+
+#[derive(Serialize)]
+pub(crate) struct InferredListEntry {
+    pub id: uuid::Uuid,
+    pub label: String,
+    pub pet_id: Option<uuid::Uuid>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: Option<NaiveDateTime>,
+    pub results: Vec<InferredResultListEntry>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct InferredResultListEntry {
+    pub id: uuid::Uuid,
+    pub certainty: f32,
+    pub is_normal: bool,
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub iris_x: Option<f32>,
+    pub iris_y: Option<f32>,
+    pub iris_a: Option<f32>,
+    pub iris_b: Option<f32>,
+    pub coverage: Option<f32>,
+    pub created_at: NaiveDateTime,
+    pub updated_at: Option<NaiveDateTime>,
+}
+
+pub(crate) enum InferredListResult {
+    Success {
+        items: Vec<InferredListEntry>,
+        has_next: bool,
+    },
+    Failed,
 }
 
 pub(crate) enum SampleUploadResult {
@@ -79,6 +123,7 @@ impl From<SampleImageResult> for HttpResponse {
 pub(crate) enum SampleInferResult {
     Success,
     NotFound,
+    Reject,
     ImageLoadError,
     ServerError,
 }
@@ -87,8 +132,9 @@ impl From<SampleInferResult> for HttpResponse {
     fn from(val: SampleInferResult) -> Self {
         match val {
             SampleInferResult::Success => HttpResponse::Accepted().finish(),
+            SampleInferResult::Reject => HttpResponse::UnprocessableEntity().finish(),
             SampleInferResult::NotFound => HttpResponse::NotFound().finish(),
-            SampleInferResult::ImageLoadError => HttpResponse::UnprocessableEntity().finish(),
+            SampleInferResult::ImageLoadError => HttpResponse::InternalServerError().finish(),
             SampleInferResult::ServerError => HttpResponse::InternalServerError().finish(),
         }
     }

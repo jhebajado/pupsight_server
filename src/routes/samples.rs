@@ -93,4 +93,5 @@ pub(crate) fn scope() -> actix_web::Scope {
         .service(post_upload)
         .service(get_image)
         .service(get_upload)
+        .service(post_infer)
 }

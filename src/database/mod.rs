@@ -1,13 +1,14 @@
 mod samples;
 mod users;
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use base64::prelude::{Engine, BASE64_STANDARD};
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::{
-    BoolExpressionMethods, ExpressionMethods, PgConnection, PgTextExpressionMethods, QueryDsl,
-    RunQueryDsl,
+    BoolExpressionMethods, ExpressionMethods, JoinOnDsl, PgConnection, PgTextExpressionMethods,
+    QueryDsl, RunQueryDsl, SelectableHelper,
 };
 
 use crate::messages::samples::SampleUploadResult;
@@ -224,6 +225,10 @@ impl Database {
 
         let boxes = detector.infer(&img).await;
 
+        if boxes.is_empty() {
+            return messages::samples::SampleInferResult::Reject;
+        }
+
         let result: Vec<self::samples::ResultInsert> = boxes
             .into_iter()
             .map(|entry| self::samples::ResultInsert {
@@ -252,21 +257,19 @@ impl Database {
         user_id: uuid::Uuid,
         desc: messages::samples::SamplePendingList,
     ) -> messages::samples::PendingListResult {
-        use crate::schema::samples;
+        use crate::schema::{results, samples};
 
         let mut connection = self.pool.get().expect("Unable to connect to database");
 
         match samples::table
-            .filter(
-                samples::owner_id
-                    .eq(user_id)
-                    .and(samples::pet_id.is_null())
-                    .and(samples::label.ilike(if let Some(search) = desc.keyword {
-                        format!("%{}%", search)
-                    } else {
-                        "%".to_string()
-                    })),
-            )
+            .left_outer_join(results::table)
+            .filter(samples::owner_id.eq(user_id).and(samples::label.ilike(
+                if let Some(search) = desc.keyword {
+                    format!("%{}%", search)
+                } else {
+                    "%".to_string()
+                },
+            )))
             .select((samples::id, samples::label, samples::pet_id))
             .limit(10)
             .offset(desc.page as i64)
@@ -289,6 +292,93 @@ impl Database {
                 }
             }
             _ => messages::samples::PendingListResult::Failed,
+        }
+    }
+
+    #[inline]
+    pub(crate) async fn get_inferred_list(
+        &self,
+        user_id: uuid::Uuid,
+        desc: messages::samples::SampleInferredList,
+    ) -> messages::samples::InferredListResult {
+        use crate::schema::{results, samples};
+
+        let mut connection = self.pool.get().expect("Unable to connect to database");
+
+        match results::table
+            .inner_join(samples::table)
+            .filter(
+                samples::owner_id
+                    .eq(user_id)
+                    .and(samples::pet_id.is_null())
+                    .and(samples::label.ilike(if let Some(search) = desc.keyword {
+                        format!("%{}%", search)
+                    } else {
+                        "%".to_string()
+                    })),
+            )
+            .select((
+                self::samples::Result::as_select(),
+                self::samples::Sample::as_select(),
+            ))
+            .get_results::<(self::samples::Result, self::samples::Sample)>(&mut connection)
+        {
+            Ok(r) => {
+                let list: Vec<(self::samples::Result, self::samples::Sample)> = r;
+
+                let map = list.into_iter().fold(
+                    HashMap::<uuid::Uuid, messages::samples::InferredListEntry>::new(),
+                    |mut buffer, (result, sample)| {
+                        let result_entry = messages::samples::InferredResultListEntry {
+                            id: result.id,
+                            certainty: result.certainty,
+                            is_normal: result.is_normal,
+                            x: result.x,
+                            y: result.y,
+                            width: result.width,
+                            height: result.height,
+                            iris_x: result.iris_x,
+                            iris_y: result.iris_y,
+                            iris_a: result.iris_a,
+                            iris_b: result.iris_b,
+                            coverage: result.coverage,
+                            created_at: result.created_at,
+                            updated_at: result.updated_at,
+                        };
+
+                        if let Some(entry) = buffer.get_mut(&result.sample_id) {
+                            entry.results.push(result_entry);
+
+                            buffer
+                        } else {
+                            buffer.insert(
+                                result.sample_id,
+                                messages::samples::InferredListEntry {
+                                    id: sample.id,
+                                    label: sample.label,
+                                    pet_id: sample.pet_id,
+                                    created_at: sample.created_at,
+                                    updated_at: sample.updated_at,
+                                    results: vec![result_entry],
+                                },
+                            );
+
+                            buffer
+                        }
+                    },
+                );
+
+                let mut items: Vec<messages::samples::InferredListEntry> =
+                    map.into_values().collect();
+
+                items.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+                messages::samples::InferredListResult::Success {
+                    items,
+                    has_next: false,
+                }
+            }
+            _ => messages::samples::InferredListResult::Failed,
         }
     }
 }
