@@ -67,12 +67,10 @@ CREATE TABLE samples (
             REFERENCES pets(id)
 );
 
-CREATE TYPE Classification AS ENUM ('normal', 'incipient');
-
 CREATE TABLE results (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
     certainty REAL NOT NULL,
-    classification Classification NOT NULL,
+    is_normal BOOL NOT NULL,
 
     x REAL NOT NULL,
     y REAL NOT NULL,

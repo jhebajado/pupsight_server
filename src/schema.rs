@@ -1,11 +1,5 @@
 // @generated automatically by Diesel CLI.
 
-pub mod sql_types {
-    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
-    #[diesel(postgres_type(name = "classification"))]
-    pub struct Classification;
-}
-
 diesel::table! {
     pets (id) {
         id -> Uuid,
@@ -20,13 +14,10 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use super::sql_types::Classification;
-
     results (id) {
         id -> Uuid,
         certainty -> Float4,
-        classification -> Classification,
+        is_normal -> Bool,
         x -> Float4,
         y -> Float4,
         width -> Float4,

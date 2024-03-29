@@ -11,4 +11,3 @@ DROP TABLE results CASCADE;
 DROP TABLE samples CASCADE;
 DROP TABLE users CASCADE;
 DROP TABLE session CASCADE;
-DROP TYPE classification;
