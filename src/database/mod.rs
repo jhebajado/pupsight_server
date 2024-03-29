@@ -229,7 +229,7 @@ impl Database {
                 if let Ok(img) =
                     image::load_from_memory_with_format(&bytes, image::ImageFormat::WebP)
                 {
-                    img
+                    img.resize_exact(640, 640, image::imageops::FilterType::Gaussian)
                 } else {
                     return messages::samples::SampleInferResult::ImageLoadError;
                 }
