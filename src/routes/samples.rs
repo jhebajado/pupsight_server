@@ -2,6 +2,7 @@ use actix_multipart::{Field, Multipart};
 use actix_web::delete;
 use actix_web::{get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
+use image::imageops;
 
 use crate::database::{SampleInsert, UserSession};
 use crate::messages::samples::{SampleImage, SampleInferredList, SamplePendingList};
@@ -20,7 +21,11 @@ async fn post_upload(
         let raw = image::load_from_memory(&file_data).unwrap();
         let mut buffer = std::io::Cursor::new(Vec::<u8>::new());
 
-        if raw.write_to(&mut buffer, image::ImageFormat::WebP).is_err() {
+        if raw
+            .resize_exact(640, 640, imageops::FilterType::Gaussian)
+            .write_to(&mut buffer, image::ImageFormat::WebP)
+            .is_err()
+        {
             return HttpResponse::UnsupportedMediaType().finish();
         }
 
