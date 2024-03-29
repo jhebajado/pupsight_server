@@ -13,6 +13,7 @@ diesel::table! {
         name -> Varchar,
         birthday -> Nullable<Timestamp>,
         owner_id -> Uuid,
+        exact_birthday -> Bool,
         created_at -> Timestamp,
         updated_at -> Nullable<Timestamp>,
     }
@@ -24,7 +25,7 @@ diesel::table! {
 
     results (id) {
         id -> Uuid,
-        certainity -> Float4,
+        certainty -> Float4,
         classification -> Classification,
         x -> Float4,
         y -> Float4,

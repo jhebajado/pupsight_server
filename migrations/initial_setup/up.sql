@@ -35,6 +35,7 @@ CREATE TABLE pets (
     name VARCHAR(32) NOT NULL,
     birthday TIMESTAMP DEFAULT NULL,
     owner_id UUID NOT NULL,
+    exact_birthday BOOL NOT NULL,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT NULL,
@@ -70,7 +71,7 @@ CREATE TYPE Classification AS ENUM ('normal', 'incipient');
 
 CREATE TABLE results (
     id UUID DEFAULT gen_random_uuid() NOT NULL,
-    certainity REAL NOT NULL,
+    certainty REAL NOT NULL,
     classification Classification NOT NULL,
 
     x REAL NOT NULL,
