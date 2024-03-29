@@ -1,7 +1,5 @@
 use diesel::{Insertable, Queryable, Selectable};
 
-use crate::detector::Classification;
-
 #[derive(Clone, Debug, PartialEq, Eq, Insertable)]
 #[diesel(table_name = crate::schema::samples)]
 pub(crate) struct SampleInsert {
