@@ -149,7 +149,7 @@ impl From<SampleInferResult> for HttpResponse {
         match val {
             SampleInferResult::Success => HttpResponse::Accepted().finish(),
             SampleInferResult::Reject => HttpResponse::UnprocessableEntity().finish(),
-            SampleInferResult::NotFound => HttpResponse::NotFound().finish(),
+            SampleInferResult::NotFound => HttpResponse::NotFound().body("Id not found"),
             SampleInferResult::ImageLoadError => {
                 HttpResponse::InternalServerError().body("ImageLoadError")
             }

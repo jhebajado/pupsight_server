@@ -1,5 +1,5 @@
 use actix_multipart::{Field, Multipart};
-use actix_web::{get, http::Error, post, web, HttpResponse};
+use actix_web::{delete, get, http::Error, post, web, HttpResponse};
 use futures::TryStreamExt;
 use image::GenericImageView;
 
@@ -112,12 +112,12 @@ async fn post_infer(
         .into()
 }
 
-#[post("/delete")]
+#[delete("/delete")]
 async fn delete_samples(
     (database, _user, desc): (
         web::Data<crate::Database>,
         UserSession,
-        web::Json<SampleImage>,
+        web::Query<SampleImage>,
     ),
 ) -> HttpResponse {
     database.delete_sample_image(desc.sample_id).await.into()

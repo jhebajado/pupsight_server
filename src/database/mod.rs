@@ -186,7 +186,6 @@ impl Database {
     #[inline]
     pub(crate) async fn delete_sample_image(
         &self,
-
         sample_id: uuid::Uuid,
     ) -> messages::samples::SampleInferResult {
         use crate::schema::samples;
