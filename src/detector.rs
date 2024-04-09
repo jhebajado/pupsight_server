@@ -132,7 +132,7 @@ impl From<usize> for Classification {
         match value {
             0 => Self::Normal,
             1 => Self::Incipient,
-            _ => panic!("Invalid numerical value for classification"),
+            _ => Self::Incipient,
         }
     }
 }

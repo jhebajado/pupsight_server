@@ -150,7 +150,9 @@ impl From<SampleInferResult> for HttpResponse {
             SampleInferResult::Success => HttpResponse::Accepted().finish(),
             SampleInferResult::Reject => HttpResponse::UnprocessableEntity().finish(),
             SampleInferResult::NotFound => HttpResponse::NotFound().finish(),
-            SampleInferResult::ImageLoadError => HttpResponse::InternalServerError().finish(),
+            SampleInferResult::ImageLoadError => {
+                HttpResponse::InternalServerError().body("ImageLoadError")
+            }
             SampleInferResult::ServerError => HttpResponse::InternalServerError().finish(),
         }
     }

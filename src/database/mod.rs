@@ -226,9 +226,7 @@ impl Database {
             .first::<Vec<u8>>(&mut connection)
         {
             Ok(bytes) => {
-                if let Ok(img) =
-                    image::load_from_memory_with_format(&bytes, image::ImageFormat::WebP)
-                {
+                if let Ok(img) = image::load_from_memory(&bytes) {
                     img.resize_exact(640, 640, image::imageops::FilterType::Gaussian)
                 } else {
                     return messages::samples::SampleInferResult::ImageLoadError;
@@ -269,7 +267,7 @@ impl Database {
     }
 
     #[inline]
-    pub(crate) async fn get_sample_list(
+    pub(crate) async fn get_pending_list(
         &self,
         user_id: uuid::Uuid,
         desc: messages::samples::SamplePendingList,
@@ -281,15 +279,19 @@ impl Database {
         match samples::table
             .left_outer_join(results::table)
             .filter(
-                samples::deleted
-                    .eq(false)
-                    .and(samples::owner_id.eq(user_id).and(samples::label.ilike(
-                        if let Some(search) = desc.keyword {
-                            format!("%{}%", search)
-                        } else {
-                            "%".to_string()
-                        },
-                    ))),
+                results::sample_id
+                    .is_null()
+                    .and(
+                        samples::deleted
+                            .eq(false)
+                            .and(samples::owner_id.eq(user_id).and(samples::label.ilike(
+                                if let Some(search) = desc.keyword {
+                                    format!("%{}%", search)
+                                } else {
+                                    "%".to_string()
+                                },
+                            ))),
+                    ),
             )
             .select((samples::id, samples::label, samples::pet_id))
             .limit(10)

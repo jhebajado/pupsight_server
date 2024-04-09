@@ -78,7 +78,7 @@ async fn get_pendings(
     ),
 ) -> HttpResponse {
     database
-        .get_sample_list(user.user_id, desc.into_inner())
+        .get_pending_list(user.user_id, desc.into_inner())
         .await
         .into()
 }
