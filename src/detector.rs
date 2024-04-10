@@ -130,8 +130,7 @@ pub enum Classification {
 impl From<usize> for Classification {
     fn from(value: usize) -> Self {
         match value {
-            0 => Self::Normal,
-            1 => Self::Incipient,
+            3 => Self::Normal,
             _ => Self::Incipient,
         }
     }
