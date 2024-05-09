@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    image: neilzangetsu/pupsight-server-base:ubuntu
+    environment:
+      WEB_PORT: 8083
+      DATABASE_URL: "postgresql://postgres:secretPassword_123@db:5432/pupsight-db"
+      CLIENT_DB_URL: "postgresql://postgres:secretPassword_123@db:5432/pupsight-db"
+      ARGON_SALT: "bviNYcCFRcpBdBm7CQ1P6sdWY1B0ktpt"
+    ports:
+      - "8083:8083"
+    depends_on:
+      - db
+    volumes:
+      - "./:/server"
+    command: sh -c "cd /server && diesel migration run && cargo run --release"
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secretPassword_123
+      POSTGRES_DB: pupsight-db
+    ports:
+      - "5432:5432"
