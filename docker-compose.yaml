@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   web:
-    image: neilzangetsu/pupsight-server-base:ubuntu
+    image: neilzangetsu/pupsight-server:latest
     environment:
       WEB_PORT: 8083
       DATABASE_URL: "postgresql://postgres:secretPassword_123@db:5432/pupsight-db"
